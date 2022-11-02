@@ -1,6 +1,7 @@
+// SPDX-License-Identifier: GPL-3.0
+
 pragma solidity >=0.7.0 <0.9.0;
 
-import "./SponsorFunding.sol";
 import "./DistributeFunding.sol";
 
 contract CrowdFunding {
@@ -15,17 +16,13 @@ contract CrowdFunding {
     uint256 public fundingGoal;
     uint256 public currentFundingSum;
     FundingState public state;
-    
-    SponsorFunding public sponsorFundingContract;
-    DistributeFunding public distributeFundingContract;
+    // DistributeFunding private distributeFunding;
 
-    constructor(uint256 _fundingGoal, address _sponsorFundingContract, address _distributeFundingContract) {
+    constructor(uint256 _fundingGoal/*, address payable _distributeFunding*/) {
         fundingGoal = _fundingGoal;
         currentFundingSum = 0;
         state = FundingState.UNFINANCED;
-
-        sponsorFundingContract = SponsorFunding(_sponsorFundingContract);
-        distributeFundingContract = DistributeFunding(_distributeFundingContract);
+        // distributeFunding = DistributeFunding(_distributeFunding);
     }
 
     function pledge() public payable {
@@ -36,7 +33,7 @@ contract CrowdFunding {
 
         if (currentFundingSum >= fundingGoal) {
             state = FundingState.PREFINANCED;
-            notifyFundingStateFinanced();
+            // notifyFundingStateFinanced();
         }
     } 
 
@@ -53,17 +50,28 @@ contract CrowdFunding {
     function notifyFundingStateFinanced() public {
         require(state == FundingState.PREFINANCED, "Cannot be sponsored, state is not PREFINANCED.");
 
-        // bool success = sponsorFundingContract.notifyFundingStateChanged();
-        sponsorFundingContract.notifyFundingStateChanged();
-
-        // require(success, "Did not receive response from SponsorFunding. Keeping state 'prefincanced'");
-
         state = FundingState.FINANCED;
     }
 
-    function transferToDistributeFundingContract() public {
-        require(state == FundingState.FINANCED, "Cannot transfer balance to Distributor, state is not FINANCED.");
+    // function transferToDistributeFundingContract() public {
+    //     require(state == FundingState.FINANCED, "Cannot transfer balance to Distributor, state is not FINANCED.");
 
-        payable(address(distributeFundingContract)).transfer(address(this).balance);
+    //     payable(address(distributeFundingContract)).transfer(address(this).balance);
+    // }
+
+    function getBalance() public view returns(uint256){
+        return address(this).balance;
+    }
+
+    function getState() public view returns(FundingState) {
+        return state;
+    }
+
+    receive() external payable {
+
+    }
+
+    fallback() external payable {
+
     }
 }
