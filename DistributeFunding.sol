@@ -4,36 +4,33 @@ pragma solidity >=0.7.0 <0.9.0;
 
 contract DistributeFunding {
 
-	bool funded = false;
-    uint total_stake = 0;
-    mapping(address => uint) benefactor_stakes;
-
-    function addBenefector(address payable user, uint stake) external {
-        require(!funded,"Funded");
-        benefactor_stakes[user] = stake;
+    struct Stakeholder {
+        uint256 stake;
+        address addr;
     }
 
-    function getBenefactorStake(address user) view external returns(uint){
-        return benefactor_stakes[user];
+    Stakeholder[] public stakeholders;
+
+    constructor() payable {}
+
+    function addStakeholder(uint256 _stake) public {
+        stakeholders.push(Stakeholder({
+            stake: _stake,
+            addr: msg.sender
+        }));
     }
 
-    function receiveFunds() payable external {
-        require(msg.value > 0);
-        funded = true;
-    }
+    function distributeFunds() public {
+        require(address(this).balance > 0, "No funds to distribute");
 
-    function getFunds() external {
-        require(benefactor_stakes[msg.sender] != 0 && funded, "No funds available");
-        uint amount = (benefactor_stakes[msg.sender] * address(this).balance) / 100;
-        payable(msg.sender).transfer(amount);
-        benefactor_stakes[msg.sender] = 0;
+        uint256 originalBalance = address(this).balance;
+
+        for(uint256 i = 0; i < stakeholders.length; i++) {
+            payable(stakeholders[i].addr).transfer(originalBalance * stakeholders[i].stake / 100);
+        }
     }
 
     receive() payable external{}
 
     fallback () external {}
-	
-	//function distributeFunding() public {
-    //    
-    //}
 }
