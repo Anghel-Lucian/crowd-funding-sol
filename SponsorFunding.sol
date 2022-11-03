@@ -35,4 +35,6 @@ contract SponsorFunding {
     fallback() external payable {
         payable(address(crowdFunding)).transfer(msg.value);
     }
+
+    receive() external payable {}
 }

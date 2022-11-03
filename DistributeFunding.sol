@@ -6,31 +6,33 @@ contract DistributeFunding {
 
     struct Stakeholder {
         uint256 stake;
-        address addr;
+        bool retrieved;
     }
-
-    Stakeholder[] public stakeholders;
+    
+    uint256 public fundingSum;
+    mapping(address => Stakeholder) public stakeholders;
 
     constructor() payable {}
 
     function addStakeholder(uint256 _stake) public {
-        stakeholders.push(Stakeholder({
-            stake: _stake,
-            addr: msg.sender
-        }));
+        stakeholders[msg.sender].stake = _stake;
+        stakeholders[msg.sender].retrieved = false;
     }
 
-    function distributeFunds() public {
+    function retrieve() public {
         require(address(this).balance > 0, "No funds to distribute");
+        require(!stakeholders[msg.sender].retrieved, "Stake already retrieved");
+        require(stakeholders[msg.sender].stake > 0, "Stake is 0");
 
-        uint256 originalBalance = address(this).balance;
-
-        for(uint256 i = 0; i < stakeholders.length; i++) {
-            payable(stakeholders[i].addr).transfer(originalBalance * stakeholders[i].stake / 100);
-        }
+        payable(msg.sender).transfer(fundingSum * stakeholders[msg.sender].stake / 100);
+        stakeholders[msg.sender].retrieved = true;
     }
 
-    receive() payable external{}
+    function setFundingSum(uint256 _fundingSum) public {
+        fundingSum = _fundingSum;
+    }
 
-    fallback () external {}
+    receive() payable external {}
+
+    fallback() external payable {}
 }

@@ -16,13 +16,13 @@ contract CrowdFunding {
     uint256 public fundingGoal;
     uint256 public currentFundingSum;
     FundingState public state;
-    // DistributeFunding private distributeFunding;
+    DistributeFunding private distributeFunding;
 
-    constructor(uint256 _fundingGoal/*, address payable _distributeFunding*/) {
+    constructor(uint256 _fundingGoal, address payable _distributeFunding) {
         fundingGoal = _fundingGoal;
         currentFundingSum = 0;
         state = FundingState.UNFINANCED;
-        // distributeFunding = DistributeFunding(_distributeFunding);
+        distributeFunding = DistributeFunding(_distributeFunding);
     }
 
     function pledge() public payable {
@@ -33,7 +33,6 @@ contract CrowdFunding {
 
         if (currentFundingSum >= fundingGoal) {
             state = FundingState.PREFINANCED;
-            // notifyFundingStateFinanced();
         }
     } 
 
@@ -53,11 +52,12 @@ contract CrowdFunding {
         state = FundingState.FINANCED;
     }
 
-    // function transferToDistributeFundingContract() public {
-    //     require(state == FundingState.FINANCED, "Cannot transfer balance to Distributor, state is not FINANCED.");
+    function transferToDistributeFundingContract() public {
+        require(state == FundingState.FINANCED || state == FundingState.PREFINANCED, "Cannot transfer balance to Distributor, state is UNFINANCED.");
 
-    //     payable(address(distributeFundingContract)).transfer(address(this).balance);
-    // }
+        distributeFunding.setFundingSum(getBalance());
+        payable(address(distributeFunding)).transfer(getBalance());        
+    }
 
     function getBalance() public view returns(uint256){
         return address(this).balance;
@@ -67,11 +67,9 @@ contract CrowdFunding {
         return state;
     }
 
-    receive() external payable {
-
-    }
+    receive() external payable {}
 
     fallback() external payable {
-
+        payable(address(distributeFunding)).transfer(msg.value);
     }
 }
